@@ -1,2 +1,2 @@
-# NTNU-Project: Heart Rate Variablity
-## Course: TK8116
+# Heart Rate Variablity
+## NTNU (Course: TK8116)
