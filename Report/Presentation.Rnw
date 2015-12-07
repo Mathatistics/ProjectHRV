@@ -1,0 +1,177 @@
+\documentclass[newPxFont]{beamer}
+\usetheme{sthlm}
+%\usecolortheme{sthlmv42}
+
+
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%        LOADING PACKAGES
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+\usepackage[utf8]{inputenc}
+\usepackage{mathpazo}
+\usepackage{chronology}
+\usepackage[natbib=true, backend=bibtex, style=numeric, citestyle=authoryear]{biblatex}
+\usepackage{apalike}
+
+%% Some Customizations and loadings
+\addbibresource{references.bib}
+\renewcommand\bibfont{\scriptsize}
+% If you have more than one page of references, you want to tell beamer
+% to put the continuation section label from the second slide onwards
+\setbeamertemplate{frametitle continuation}[from second]
+% Now get rid of all the colours
+\setbeamercolor*{bibliography entry title}{fg=black}
+\setbeamercolor*{bibliography entry author}{fg=black}
+\setbeamercolor*{bibliography entry location}{fg=black}
+\setbeamercolor*{bibliography entry note}{fg=black}
+% and kill the abominable icon
+\setbeamertemplate{bibliography item}{\insertbiblabel}
+\setbeamertemplate{caption}[numbered, justification=centering]
+\setbeamerfont{caption}{size=\scriptsize}
+
+\renewcommand{\event}[3][e]{%
+  \pgfmathsetlength\xstop{(#2-\theyearstart)*\unit}%
+  \ifx #1e%
+    \draw[fill=black,draw=none,opacity=0.5]%
+      (\xstop, 0) circle (.2\unit)%
+      node[opacity=1,rotate=45,right=.2\unit] {#3};%
+  \else%
+    \pgfmathsetlength\xstart{(#1-\theyearstart)*\unit}%
+    \draw[fill=black,draw=none,opacity=0.5,rounded corners=.1\unit]%
+      (\xstart,-.1\unit) rectangle%
+      node[opacity=1,rotate=45,right=.2\unit] {#3} (\xstop,.1\unit);%
+  \fi}%
+
+
+\title{Models Can Lie}
+\subtitle{An Illustration from Heart Rate Variablity Data}
+%\date{\small{\jobname}}
+\date{\today}
+\author{Raju Rimal and Veronika Lindberg}
+\institute{Norwegian University of Life Sciences}
+
+\hypersetup{
+pdfauthor = {Raju Rimal},
+pdftitle = {Models Can Lie},
+pdfsubject = {Statistics},
+pdfkeywords = {},
+pdfmoddate= {D:\pdfdate},
+pdfcreator = {}
+}
+
+\begin{document}
+
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%
+%	TITLE PAGE
+%
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+\maketitle
+
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%
+%	Initial Stuffs
+%
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+<<initialStuffs, echo = FALSE, message=FALSE, warning=FALSE, error=FALSE, results='hide'>>=
+## Setting up working directory
+wd <- "/Users/rajurim/Dropbox (NMBU)/ProjectHRV/Report"
+if (getwd() != wd)
+  setwd(wd)
+
+source('initialStuffs.R')
+source('functions.R')
+source('makeDataReady.R')
+knitr::opts_chunk$set(comment = NA)
+# knitr::opts_chunk$set(eval = F)
+req.rdata <- c('pcr1', 'pls1', 'cpls1',
+               'pcr2', 'pls2', 'cpls2',
+               'pcr3', 'pls3', 'cpls3')
+fp <- file.path('Exports', paste(req.rdata, 'Rdata', sep = '.'))
+fp <- fp[file.exists(fp)]
+llply(fp, load, envir = .GlobalEnv)
+mdl.list <- paste(gsub('[[:digit:]]', replacement = '', req.rdata), 
+                  gsub('[[:alpha:]]', replacement = '', req.rdata), 
+                  sep = '.')
+@
+
+
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%
+%	TABLE OF CONTENTS: OVERVIEW
+%
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+\begin{frame}{Overview}
+\tableofcontents
+\end{frame}
+
+\section{Background}
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%	FRAME: Theoritical Background
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+\begin{frame}[c, fragile]{Theoritical Background}
+Some theoritical things and something about cross-validation
+
+\end{frame}
+
+\section{Classification with series stack}
+% Dealing with First set
+<<firstSet, child="Child1.Rnw", eval = T>>=
+@
+\section{Classification with series averaged over Series-Event Combination}
+<<secondSet, child="Child2.Rnw", eval = T>>=
+@
+\section{Classification with series averaged over Person-Event Combination}
+<<thirdSet, child="Child3.Rnw", eval = T>>=
+@
+
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%	FRAME: Model Comparison with Misclassification Error
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+\section{Some Comparison}
+\begin{frame}[t]{Misclassification Errors}
+<<mscErrorSetup, echo = F>>=
+evl <- function(string) eval(parse(text = string))
+mscError <- data.table(
+  ldply(ls(environment(), pattern = 'msc.[a-z]+.[0-9]'), function(x){
+    cbind(Model = x, 
+          TrainMsc = round(evl(x)$train.msc, 4), 
+          TestMsc = round(evl(x)$test.msc, 4),
+          ncomp = evl(x)$ncomp)
+})
+)
+invisible(mscError[, c('Model', 'Set') := 
+                     tstrsplit(Model, '.', fixed = T)[-1]])
+mscError <- melt(mscError, id.vars = c('Model', 'Set', 'ncomp'))
+invisible(mscError[, c('variable', 'Model', 'Set', 'ncomp') := 
+                       .(gsub('Msc', '', mscError[, variable]),
+                         toupper(Model),
+                         paste('Set', Set),
+                         ncomp)])
+@
+<<mscErrorPlot, echo = F, fig.height=4, fig.cap='Training and Test Misclassification Error for all the three models. The LDA models were fitted with the scores obtained from three models with components (number above each points) needed to get minimum cross-validation error.'>>=
+ggplot(mscError, aes(Model, value, color = variable)) + 
+  geom_point() + 
+  geom_text(aes(label = ifelse(variable == 'Train', ncomp, ''), 
+                vjust = ifelse(variable == 'Train', -1.5, 1.5)), 
+            color = 'black', size = rel(4)) +
+  facet_grid(. ~ Set, as.table = TRUE) + 
+  geom_line(aes(group = variable)) + 
+  theme_bw() +
+  theme(legend.position = 'top',
+        legend.title = element_blank()) +
+  labs(y = 'Misclassification Error')
+@
+\end{frame}
+
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%	FRAME: References
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+\begin{frame}[c]{References}
+\nocite{martens2001multivariate}
+\printbibliography
+\end{frame}
+
+\end{document}

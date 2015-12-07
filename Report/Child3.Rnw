@@ -1,0 +1,113 @@
+% !Rnw root = Presentation.Rnw
+
+<<Set3Setup, echo=FALSE>>=
+## Getting Data
+set.3 <- freqMat[, llply(.SD, mean), .SDcols = freq.cols, by = .(Person, event, Test)]
+train.3 <- list(x = I(as.matrix(set.3[which(!Test), freq.cols, with = F])),
+              y = set.3[which(!Test), event])
+test.3 <- list(x = I(as.matrix(set.3[which(Test), freq.cols, with = F])),
+              y = set.3[which(Test), event])
+@
+<<Set3ModelBuilding, echo=FALSE>>=
+## Model Fitting
+## PCR Model
+if (!exists('pcr.3')) {
+  pcr.3 <- plda(x = train.3$x, cat.resp = train.3$y, fn = 'pcr', split = 10, fitComp = 5)
+  save(pcr.3, file = 'Exports/pcr3.Rdata')
+}
+## PLS Model
+if (!exists('pls.3')) {
+  pls.3 <- plda(x = train.3$x, cat.resp = train.3$y, fn = 'plsr', split = 10, fitComp = 5)
+  save(pls.3, file = 'Exports/pls3.Rdata')
+}
+## CPLS Model
+if (!exists('cpls.3')) {
+  cpls.3 <- plda(x = train.3$x, cat.resp = train.3$y, fn = 'cppls', split = 10, fitComp = 5, ldafn = 'rda')
+  save(cpls.3, file = 'Exports/cpls3.Rdata')
+}
+@
+<<Set3ErrorSetup, echo=FALSE, fig.width='\\textwidth', fig.height=2.5>>=
+err.dt <- getError(pls.3, type = 'both')$err.dt[
+  getError(pcr.3, type = 'both')$err.dt][
+    getError(cpls.3, type = 'both')$err.dt]
+setnames(err.dt, names(err.dt), c('Type', 'Comp', 'PLS', 'PCR', 'CPLS'))
+err.dt <- melt(err.dt, 1:2)
+err.min.dt <- err.dt[, .(Comp = which.min(value), value = min(value)), 
+                     by = .(Type, variable)]
+setkeyv(err.dt, c('Type', 'Comp', 'variable'))
+setkeyv(err.min.dt, c('Type', 'Comp', 'variable'))
+@
+
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%	FRAME: Model Error (Test vs Train)
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+\begin{frame}[t]{Training and Cross-validation Errors}
+<<Set3ErrorPlot, errPlot, echo = F, fig.width='\\linewidth', fig.height=4.5, eval = TRUE>>=
+ggplot(err.dt, aes(Comp, value)) + geom_line() +
+  facet_grid(Type~variable, scale = 'free_y', as.table = TRUE) +
+  theme_bw() +
+  geom_text(data = err.min.dt, aes( x = Inf, y = Inf,
+           label = paste('Comp:', Comp, '\nError:', round(value, 2))
+  ), hjust = 1.35, vjust = 1.35, size = 4) +
+  labs(x = 'Components', y = 'Misclassification Error')
+@
+\end{frame}
+
+<<Set3MscSetup, echo=FALSE, fig.width='\\textwidth', fig.height=2.5>>=
+msc.pls.3 <- msc(getPredicted(pls.3, ncomp = 1, newdata = test.3$x, 
+                            newY = test.3$y))
+msc.pcr.3 <- msc(getPredicted(pcr.3, ncomp = 1, newdata = test.3$x, 
+                            newY = test.3$y))
+msc.cpls.3 <- msc(getPredicted(cpls.3, ncomp = 1, newdata = test.3$x, 
+                            newY = test.3$y))
+msc.3 <- msc.pls.3$conf.dt[msc.pcr.3$conf.dt][msc.cpls.3$conf.dt]
+setnames(msc.3, names(msc.3), c('Original', 'Correct', 'Type', 'PLS', 'PCR', 'CPLS'))
+msc.3 <- melt(msc.3, 1:3)
+setkeyv(msc.3, c('Original', 'Correct', 'Type', 'variable'))
+@
+
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%	FRAME: Model Misclassification
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+\begin{frame}[c]{Misclassifications}
+\only<1>{
+{\Large Training Misclassifications}
+<<Set3MscPlot.1, echo = F, eval=TRUE, fig.height=5>>=
+mscPlot(msc.3, 'train')
+@
+}
+\only<2>{
+{\Large Test Misclassification}
+<<Set3MscPlot.2, echo = F, eval=TRUE, fig.height=5>>=
+mscPlot(msc.3, 'test')
+@
+}
+\end{frame}
+
+
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%	FRAME: Scores for Set3
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+\begin{frame}[c]{Plotting Scores}
+\only<1>{
+{\Large Scoreplot for PCR model}
+<<Set3ScorePlot1, echo = F, eval=TRUE, fig.height=5>>=
+print(plotScore(pcr.3, 'Model:PCR', cat.var = train.3$y, point.size = 2))
+@
+}
+\only<2>{
+{\Large Scoreplot for PLS model}
+<<Set3ScorePlot2, echo = F, eval=TRUE, fig.height=5>>=
+print(plotScore(pls.3, 'Model:PLS', cat.var = train.3$y, point.size = 2))
+@
+}
+\only<3>{
+{\Large Scoreplot for CPPLS model}
+<<Set3ScorePlot3, echo = F, eval=TRUE, fig.height=5>>=
+print(plotScore(cpls.3, 'Model:CPPLS', cat.var = train.3$y, point.size = 2))
+@
+}
+\end{frame}

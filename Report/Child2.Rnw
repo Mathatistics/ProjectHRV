@@ -1,0 +1,112 @@
+% !Rnw root = Presentation.Rnw
+<<Set2Setup, echo=FALSE>>=
+## Getting Data
+set.2 <- freqMat[, llply(.SD, mean), .SDcols = freq.cols, by = .(ID, event, Test)]
+train.2 <- list(x = I(as.matrix(set.2[which(!Test), freq.cols, with = F])),
+              y = set.2[which(!Test), event])
+test.2 <- list(x = I(as.matrix(set.2[which(Test), freq.cols, with = F])),
+              y = set.2[which(Test), event])
+@
+<<Set2ModelBuilding, echo=FALSE>>=
+## Model Fitting
+## PCR Model
+if (!exists('pcr.2')) {
+  pcr.2 <- plda(x = train.2$x, cat.resp = train.2$y, fn = 'pcr', split = 10)
+  save(pcr.2, file = 'Exports/pcr2.Rdata')
+}
+## PLS Model
+if (!exists('pls.2')) {
+  pls.2 <- plda(x = train.2$x, cat.resp = train.2$y, fn = 'plsr', split = 10)
+  save(pls.2, file = 'Exports/pls2.Rdata')
+}
+## CPLS Model
+if (!exists('cpls.2')) {
+  cpls.2 <- plda(x = train.2$x, cat.resp = train.2$y, fn = 'cppls', split = 10)
+  save(cpls.2, file = 'Exports/cpls2.Rdata')
+}
+@
+<<Set2ErrorSetup, echo=FALSE, fig.width='\\textwidth', fig.height=2.5>>=
+err.dt <- getError(pls.2, type = 'both')$err.dt[
+  getError(pcr.2, type = 'both')$err.dt][
+    getError(cpls.2, type = 'both')$err.dt]
+setnames(err.dt, names(err.dt), c('Type', 'Comp', 'PLS', 'PCR', 'CPLS'))
+err.dt <- melt(err.dt, 1:2)
+err.min.dt <- err.dt[, .(Comp = which.min(value), value = min(value)), 
+                     by = .(Type, variable)]
+setkeyv(err.dt, c('Type', 'Comp', 'variable'))
+setkeyv(err.min.dt, c('Type', 'Comp', 'variable'))
+@
+
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%	FRAME: Model Error (Test vs Train)
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+\begin{frame}[t]{Training and Cross-validation Errors}
+<<Set2ErrorPlot, errPlot, echo = F, fig.width='\\linewidth', fig.height=4.5, eval = TRUE>>=
+ggplot(err.dt, aes(Comp, value)) + geom_line() +
+  facet_grid(Type~variable, scale = 'free_y', as.table = TRUE) +
+  theme_bw() +
+  geom_text(data = err.min.dt, aes( x = Inf, y = Inf,
+           label = paste('Comp:', Comp, '\nError:', round(value, 2))
+  ), hjust = 1.25, vjust = 1.25, size = 4) +
+  labs(x = 'Components', y = 'Misclassification Error')
+@
+\end{frame}
+
+<<Set2MscSetup, echo=FALSE, fig.width='\\textwidth', fig.height=2.5>>=
+msc.pls.2 <- msc(getPredicted(pls.2, ncomp = 15, newdata = test.2$x, 
+                            newY = test.2$y))
+msc.pcr.2 <- msc(getPredicted(pcr.2, ncomp = 128, newdata = test.2$x, 
+                            newY = test.2$y))
+msc.cpls.2 <- msc(getPredicted(cpls.2, ncomp = 68, newdata = test.2$x, 
+                            newY = test.2$y))
+msc.2 <- msc.pls.2$conf.dt[msc.pcr.2$conf.dt][msc.cpls.2$conf.dt]
+setnames(msc.2, names(msc.2), c('Original', 'Correct', 'Type', 'PLS', 'PCR', 'CPLS'))
+msc.2 <- melt(msc.2, 1:3)
+setkeyv(msc.2, c('Original', 'Correct', 'Type', 'variable'))
+@
+
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%	FRAME: Model Misclassification
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+\begin{frame}[c]{Misclassifications}
+\only<1>{
+{\Large Training Misclassifications}
+<<Set2MscPlot.1, echo = F, eval=TRUE, fig.height=5>>=
+mscPlot(msc.2, 'train')
+@
+}
+\only<2>{
+{\Large Test Misclassification}
+<<Set2MscPlot.2, echo = F, eval=TRUE, fig.height=5>>=
+mscPlot(msc.2, 'test')
+@
+}
+\end{frame}
+
+
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%	FRAME: Scores for Set2
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+\begin{frame}[c]{Plotting Scores}
+\only<1>{
+{\Large Scoreplot for PCR model}
+<<Set2ScorePlot1, echo = F, eval=TRUE, fig.height=5>>=
+print(plotScore(pcr.2, 'Model:PCR', cat.var = train.2$y, point.size = 2))
+@
+}
+\only<2>{
+{\Large Scoreplot for PLS model}
+<<Set2ScorePlot2, echo = F, eval=TRUE, fig.height=5>>=
+print(plotScore(pls.2, 'Model:PLS', cat.var = train.2$y, point.size = 2))
+@
+}
+\only<3>{
+{\Large Scoreplot for CPPLS model}
+<<Set2ScorePlot3, echo = F, eval=TRUE, fig.height=5>>=
+print(plotScore(cpls.2, 'Model:CPPLS', cat.var = train.2$y, point.size = 2))
+@
+}
+\end{frame}

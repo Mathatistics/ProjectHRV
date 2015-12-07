@@ -1,0 +1,399 @@
+\documentclass[newPxFont]{beamer}\usepackage[]{graphicx}\usepackage[]{color}
+%% maxwidth is the original width if it is less than linewidth
+%% otherwise use linewidth (to make sure the graphics do not exceed the margin)
+\makeatletter
+\def\maxwidth{ %
+  \ifdim\Gin@nat@width>\linewidth
+    \linewidth
+  \else
+    \Gin@nat@width
+  \fi
+}
+\makeatother
+
+\definecolor{fgcolor}{rgb}{0.345, 0.345, 0.345}
+\newcommand{\hlnum}[1]{\textcolor[rgb]{0.686,0.059,0.569}{#1}}%
+\newcommand{\hlstr}[1]{\textcolor[rgb]{0.192,0.494,0.8}{#1}}%
+\newcommand{\hlcom}[1]{\textcolor[rgb]{0.678,0.584,0.686}{\textit{#1}}}%
+\newcommand{\hlopt}[1]{\textcolor[rgb]{0,0,0}{#1}}%
+\newcommand{\hlstd}[1]{\textcolor[rgb]{0.345,0.345,0.345}{#1}}%
+\newcommand{\hlkwa}[1]{\textcolor[rgb]{0.161,0.373,0.58}{\textbf{#1}}}%
+\newcommand{\hlkwb}[1]{\textcolor[rgb]{0.69,0.353,0.396}{#1}}%
+\newcommand{\hlkwc}[1]{\textcolor[rgb]{0.333,0.667,0.333}{#1}}%
+\newcommand{\hlkwd}[1]{\textcolor[rgb]{0.737,0.353,0.396}{\textbf{#1}}}%
+
+\usepackage{framed}
+\makeatletter
+\newenvironment{kframe}{%
+ \def\at@end@of@kframe{}%
+ \ifinner\ifhmode%
+  \def\at@end@of@kframe{\end{minipage}}%
+  \begin{minipage}{\columnwidth}%
+ \fi\fi%
+ \def\FrameCommand##1{\hskip\@totalleftmargin \hskip-\fboxsep
+ \colorbox{shadecolor}{##1}\hskip-\fboxsep
+     % There is no \\@totalrightmargin, so:
+     \hskip-\linewidth \hskip-\@totalleftmargin \hskip\columnwidth}%
+ \MakeFramed {\advance\hsize-\width
+   \@totalleftmargin\z@ \linewidth\hsize
+   \@setminipage}}%
+ {\par\unskip\endMakeFramed%
+ \at@end@of@kframe}
+\makeatother
+
+\definecolor{shadecolor}{rgb}{.97, .97, .97}
+\definecolor{messagecolor}{rgb}{0, 0, 0}
+\definecolor{warningcolor}{rgb}{1, 0, 1}
+\definecolor{errorcolor}{rgb}{1, 0, 0}
+\newenvironment{knitrout}{}{} % an empty environment to be redefined in TeX
+
+\usepackage{alltt}
+\usetheme{sthlm}
+%\usecolortheme{sthlmv42}
+
+
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%        LOADING PACKAGES
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+\usepackage[utf8]{inputenc}
+\usepackage{mathpazo}
+\usepackage{chronology}
+\usepackage[natbib=true, backend=bibtex, style=numeric, citestyle=authoryear]{biblatex}
+\usepackage{apalike}
+
+%% Some Customizations and loadings
+\addbibresource{references.bib}
+\renewcommand\bibfont{\scriptsize}
+% If you have more than one page of references, you want to tell beamer
+% to put the continuation section label from the second slide onwards
+\setbeamertemplate{frametitle continuation}[from second]
+% Now get rid of all the colours
+\setbeamercolor*{bibliography entry title}{fg=black}
+\setbeamercolor*{bibliography entry author}{fg=black}
+\setbeamercolor*{bibliography entry location}{fg=black}
+\setbeamercolor*{bibliography entry note}{fg=black}
+% and kill the abominable icon
+\setbeamertemplate{bibliography item}{\insertbiblabel}
+\setbeamertemplate{caption}[numbered, justification=centering]
+\setbeamerfont{caption}{size=\scriptsize}
+
+\renewcommand{\event}[3][e]{%
+  \pgfmathsetlength\xstop{(#2-\theyearstart)*\unit}%
+  \ifx #1e%
+    \draw[fill=black,draw=none,opacity=0.5]%
+      (\xstop, 0) circle (.2\unit)%
+      node[opacity=1,rotate=45,right=.2\unit] {#3};%
+  \else%
+    \pgfmathsetlength\xstart{(#1-\theyearstart)*\unit}%
+    \draw[fill=black,draw=none,opacity=0.5,rounded corners=.1\unit]%
+      (\xstart,-.1\unit) rectangle%
+      node[opacity=1,rotate=45,right=.2\unit] {#3} (\xstop,.1\unit);%
+  \fi}%
+
+
+\title{Models Can Lie}
+\subtitle{An Illustration from Heart Rate Variablity Data}
+%\date{\small{\jobname}}
+\date{\today}
+\author{Raju Rimal and Veronika Lindberg}
+\institute{Norwegian University of Life Sciences}
+
+\hypersetup{
+pdfauthor = {Raju Rimal},
+pdftitle = {Models Can Lie},
+pdfsubject = {Statistics},
+pdfkeywords = {},
+pdfmoddate= {D:\pdfdate},
+pdfcreator = {}
+}
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\begin{document}
+
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%
+%	TITLE PAGE
+%
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+\maketitle
+
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%
+%	Initial Stuffs
+%
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+
+
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%
+%	TABLE OF CONTENTS: OVERVIEW
+%
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+\begin{frame}{Overview}
+\tableofcontents
+\end{frame}
+
+\section{Background}
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%	FRAME: Theoritical Background
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+\begin{frame}[c, fragile]{Theoritical Background}
+Some theoritical things and something about cross-validation
+
+\end{frame}
+
+\section{Classification with series stack}
+% Dealing with First set
+
+% !Rnw root = Presentation.Rnw
+
+
+
+
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%	FRAME: Model Error (Test vs Train)
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+\begin{frame}[t]{Training and Cross-validation Errors}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/Set1ErrorPlot__errPlot-1} 
+
+\end{knitrout}
+\end{frame}
+
+
+
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%	FRAME: Model Misclassification
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+\begin{frame}[c]{Misclassifications}
+\only<1>{
+{\Large Training Misclassifications}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/Set1MscPlot_1-1} 
+
+\end{knitrout}
+}
+\only<2>{
+{\Large Test Misclassification}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/Set1MscPlot_2-1} 
+
+\end{knitrout}
+}
+\end{frame}
+
+
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%	FRAME: Scores for Set1
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+\begin{frame}[c]{Plotting Scores}
+\only<1>{
+{\Large Scoreplot for PCR model}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/Set1ScorePlot1-1} 
+
+\end{knitrout}
+}
+\only<2>{
+{\Large Scoreplot for PLS model}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/Set1ScorePlot2-1} 
+
+\end{knitrout}
+}
+\only<3>{
+{\Large Scoreplot for CPPLS model}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/Set1ScorePlot3-1} 
+
+\end{knitrout}
+}
+\end{frame}
+\section{Classification with series averaged over Series-Event Combination}
+
+% !Rnw root = Presentation.Rnw
+
+
+
+
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%	FRAME: Model Error (Test vs Train)
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+\begin{frame}[t]{Training and Cross-validation Errors}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/Set2ErrorPlot__errPlot-1} 
+
+\end{knitrout}
+\end{frame}
+
+
+
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%	FRAME: Model Misclassification
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+\begin{frame}[c]{Misclassifications}
+\only<1>{
+{\Large Training Misclassifications}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/Set2MscPlot_1-1} 
+
+\end{knitrout}
+}
+\only<2>{
+{\Large Test Misclassification}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/Set2MscPlot_2-1} 
+
+\end{knitrout}
+}
+\end{frame}
+
+
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%	FRAME: Scores for Set2
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+\begin{frame}[c]{Plotting Scores}
+\only<1>{
+{\Large Scoreplot for PCR model}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/Set2ScorePlot1-1} 
+
+\end{knitrout}
+}
+\only<2>{
+{\Large Scoreplot for PLS model}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/Set2ScorePlot2-1} 
+
+\end{knitrout}
+}
+\only<3>{
+{\Large Scoreplot for CPPLS model}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/Set2ScorePlot3-1} 
+
+\end{knitrout}
+}
+\end{frame}
+\section{Classification with series averaged over Person-Event Combination}
+
+% !Rnw root = Presentation.Rnw
+
+
+
+
+
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%	FRAME: Model Error (Test vs Train)
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+\begin{frame}[t]{Training and Cross-validation Errors}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/Set3ErrorPlot__errPlot-1} 
+
+\end{knitrout}
+\end{frame}
+
+
+
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%	FRAME: Model Misclassification
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+\begin{frame}[c]{Misclassifications}
+\only<1>{
+{\Large Training Misclassifications}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/Set3MscPlot_1-1} 
+
+\end{knitrout}
+}
+\only<2>{
+{\Large Test Misclassification}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/Set3MscPlot_2-1} 
+
+\end{knitrout}
+}
+\end{frame}
+
+
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%	FRAME: Scores for Set3
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+\begin{frame}[c]{Plotting Scores}
+\only<1>{
+{\Large Scoreplot for PCR model}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/Set3ScorePlot1-1} 
+
+\end{knitrout}
+}
+\only<2>{
+{\Large Scoreplot for PLS model}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/Set3ScorePlot2-1} 
+
+\end{knitrout}
+}
+\only<3>{
+{\Large Scoreplot for CPPLS model}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/Set3ScorePlot3-1} 
+
+\end{knitrout}
+}
+\end{frame}
+
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%	FRAME: Model Comparison with Misclassification Error
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+\section{Some Comparison}
+\begin{frame}[t]{Misclassification Errors}
+
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{figure}
+\includegraphics[width=\maxwidth]{figure/mscErrorPlot-1} \caption[Training and Test Misclassification Error for all the three models]{Training and Test Misclassification Error for all the three models. The LDA models were fitted with the scores obtained from three models with components (number above each points) needed to get minimum cross-validation error.}\label{fig:mscErrorPlot}
+\end{figure}
+
+
+\end{knitrout}
+\end{frame}
+
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%	FRAME: References
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+\begin{frame}[c]{References}
+\nocite{martens2001multivariate}
+\printbibliography
+\end{frame}
+
+\end{document}
