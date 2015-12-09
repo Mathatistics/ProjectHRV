@@ -43,7 +43,7 @@ setkeyv(err.min.dt, c('Type', 'Comp', 'variable'))
 %-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 \begin{frame}[t]{Training and Cross-validation Errors}
-<<Set3ErrorPlot, errPlot, echo = F, fig.width='\\linewidth', fig.height=4.5, eval = TRUE>>=
+<<Set3ErrorPlot, errPlot, echo = F, fig.width='\\linewidth', fig.height=4.5>>=
 ggplot(err.dt, aes(Comp, value)) + geom_line() +
   facet_grid(Type~variable, scale = 'free_y', as.table = TRUE) +
   theme_bw() +
@@ -73,14 +73,14 @@ setkeyv(msc.3, c('Original', 'Correct', 'Type', 'variable'))
 
 \begin{frame}[c]{Misclassifications}
 \only<1>{
-{\Large Training Misclassifications}
-<<Set3MscPlot.1, echo = F, eval=TRUE, fig.height=5>>=
+{\large Training Misclassifications}
+<<Set3MscPlot.1, echo = F, fig.height=5>>=
 mscPlot(msc.3, 'train')
 @
 }
 \only<2>{
-{\Large Test Misclassification}
-<<Set3MscPlot.2, echo = F, eval=TRUE, fig.height=5>>=
+{\large Test Misclassification}
+<<Set3MscPlot.2, echo = F, fig.height=5>>=
 mscPlot(msc.3, 'test')
 @
 }
@@ -93,21 +93,30 @@ mscPlot(msc.3, 'test')
 
 \begin{frame}[c]{Plotting Scores}
 \only<1>{
-{\Large Scoreplot for PCR model}
-<<Set3ScorePlot1, echo = F, eval=TRUE, fig.height=5>>=
-print(plotScore(pcr.3, 'Model:PCR', cat.var = train.3$y, point.size = 2))
+{\large Scoreplot for PCR model}
+<<Set3ScorePlot1, echo = F, fig.height=5>>=
+pcr.scrs <- list(plotScore(pcr.3, 'Model:PCR', cat.var = train.3$y),
+                 plotScore(pcr.3, 'Model:PCR', cat.var = train.3$y, comps = 2:3),
+                 n.col = 2)
+do.call(grid_arrange_shared_legend, pcr.scrs)
 @
 }
 \only<2>{
-{\Large Scoreplot for PLS model}
-<<Set3ScorePlot2, echo = F, eval=TRUE, fig.height=5>>=
-print(plotScore(pls.3, 'Model:PLS', cat.var = train.3$y, point.size = 2))
+{\large Scoreplot for PLS model}
+<<Set3ScorePlot2, echo = F, fig.height=5>>=
+pls.scrs <- list(plotScore(pls.3, 'Model:PLS', cat.var = train.3$y),
+                 plotScore(pls.3, 'Model:PLS', cat.var = train.3$y, comps = 2:3),
+                 n.col = 2)
+do.call(grid_arrange_shared_legend, pls.scrs)
 @
 }
 \only<3>{
-{\Large Scoreplot for CPPLS model}
-<<Set3ScorePlot3, echo = F, eval=TRUE, fig.height=5>>=
-print(plotScore(cpls.3, 'Model:CPPLS', cat.var = train.3$y, point.size = 2))
+{\large Scoreplot for CPPLS model}
+<<Set3ScorePlot3, echo = F, fig.height=5>>=
+cpls.scrs <- list(plotScore(cpls.3, 'Model:CPPLS', cat.var = train.3$y),
+                 plotScore(cpls.3, 'Model:CPPLS', cat.var = train.3$y, comps = 2:3),
+                 n.col = 2)
+do.call(grid_arrange_shared_legend, cpls.scrs)
 @
 }
 \end{frame}

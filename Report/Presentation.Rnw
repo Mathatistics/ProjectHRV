@@ -7,10 +7,13 @@
 %        LOADING PACKAGES
 %-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 \usepackage[utf8]{inputenc}
-\usepackage{mathpazo}
+% \usepackage{mathpazo}
 \usepackage{chronology}
-\usepackage[natbib=true, backend=bibtex, style=numeric, citestyle=authoryear]{biblatex}
+\usepackage[natbib=true, backend=bibtex, style=numeric, citestyle=numeric]{biblatex}
 \usepackage{apalike}
+\usepackage{fix-cm}
+\usepackage{pgf, tikz}
+\usetikzlibrary{positioning, shapes, fit, chains}
 
 %% Some Customizations and loadings
 \addbibresource{references.bib}
@@ -47,7 +50,8 @@
 %\date{\small{\jobname}}
 \date{\today}
 \author{Raju Rimal and Veronika Lindberg}
-\institute{Norwegian University of Life Sciences}
+\institute{Norwegian University of Science and Technology \\
+\large{Norwegian University of Life Sciences}}
 
 \hypersetup{
 pdfauthor = {Raju Rimal},
@@ -73,17 +77,19 @@ pdfcreator = {}
 %	Initial Stuffs
 %
 %-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+<<never.run, echo = F, eval = F>>=
+knitr::opts_chunk$set(eval = FALSE)
+@
+
 <<initialStuffs, echo = FALSE, message=FALSE, warning=FALSE, error=FALSE, results='hide'>>=
 ## Setting up working directory
 wd <- "/Users/rajurim/Dropbox (NMBU)/ProjectHRV/Report"
-if (getwd() != wd)
-  setwd(wd)
-
+knitr::opts_knit$set(base.dir = wd)
 source('initialStuffs.R')
 source('functions.R')
 source('makeDataReady.R')
 knitr::opts_chunk$set(comment = NA)
-# knitr::opts_chunk$set(eval = F)
+opts_chunk$set(dev = 'pdf')
 req.rdata <- c('pcr1', 'pls1', 'cpls1',
                'pcr2', 'pls2', 'cpls2',
                'pcr3', 'pls3', 'cpls3')
@@ -107,22 +113,135 @@ mdl.list <- paste(gsub('[[:digit:]]', replacement = '', req.rdata),
 
 \section{Background}
 %-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-%	FRAME: Theoritical Background
+%	FRAME: Some Background
 %-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-\begin{frame}[c, fragile]{Theoritical Background}
-Some theoritical things and something about cross-validation
+\begin{frame}[c, fragile]{Some Background}
+\begin{enumerate}[<+->]
+  \item PCR, PLS and Canonically Powered PLS (CPPLS) is used in the analysis
+  \item CPPLS integrate CCA with PLS to select relevant variables for response
+  \item Cross-validation is performed over the observations on each a) frequency window b) series c) person-event combination
+  \item Three variation of dataset is used
+  \begin{itemize}
+   \item Transpose of each frequency windows stacked together
+   \item The average frequencies over time for each Series
+   \item The average frequencies over time for each person-event combination
+  \end{itemize}
+  \item LDA model is used for discriminant analysis using the scores obtained form each of the latent variable model with cross-validation implemented
+\end{enumerate}
+\end{frame}
 
+\section{How data looks like}
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%	FRAME: How data looks like
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+<<dataVizSetup, echo = F>>=
+act <- c('Sauna', 'Gym')
+prsn <- paste('Person', c(1,3))
+series <- c('P10')
+
+spc.grm <- spcgrm[Activity %in% act & Person %in% prsn & !ID %in% series]
+
+spc.Mat <- spc.grm[, .(spMat = llply(sg, function(x){
+spMat <- t(log10(abs(x$S)))
+rownames(spMat) <- x$t
+colnames(spMat) <- x$f
+list(spMat)
+})), by = .(Activity, ID, Person)]
+
+spc.melt <- rbindlist(llply(1:nrow(spc.Mat), function(x){
+spMat <- melt(spc.Mat[x, spMat][[1]][[1]])
+data.table(
+Activity = spc.Mat[x, Activity],
+ID = spc.Mat[x, ID],
+Person = spc.Mat[x, Person],
+spMat
+)
+}))
+@
+
+\begin{frame}[t]{How data looks like}
+\begin{columns}[t]
+\column{0.7\textwidth}
+<<dataVizPrint, echo = F, fig.width = '\\textwidth'>>=
+dataVizplt <- ggplot(data.frame(spc.melt), aes(Var2, Var1)) +
+geom_tile(aes(fill = value)) +
+facet_grid(Person + ID + Activity ~ ., space = 'free_y', scale = 'free') +
+labs(x = 'Frequency Window (dB)', y = 'Time (s)') +
+theme_bw() +
+theme(legend.position = 'none')
+print(dataVizplt)
+@
+\end{columns}
+\end{frame}
+
+%% Continue Frame
+\begin{frame}[t]{How data looks like}
+\begin{columns}[t]
+\column{0.6\textwidth}
+<<dataVizPrint, echo = F, fig.width = '\\textwidth'>>=
+@
+\column{0.4\textwidth}
+\begin{itemize}[<only@+>]
+\item Each block represent a series divided into several windows (rows), 128 columns each with 16 overlaps. The cell contains the frequency values obtained from fast fourier transform
+\item Each person may have involved into multiple activities which may have replications
+\item Set 1: Each windows are stacked in a row to form a big matrix (may suffer from repeated measurement). This contains different parts of same series in various rows.
+\item Set 2: Each series are averaged over different time points. Each row corresponds to one series.
+\item Set 3: A person can have multiple series of same activity (replication), the third set is averaged over each person-event conbination. In this case each row corresponds to some specific event for some specific person
+\end{itemize}
+\end{columns}
+\end{frame}
+
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+%	FRAME: Cross Validation
+%-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+\begin{frame}[c, fragile]{Cross-Validation}
+\begin{tikzpicture}[
+rectNode/.append style = {draw, rectangle, minimum height = 1cm, minimum width = 1cm},
+myArrow/.append style = {->, >=latex, dashed},
+node distance = 0.75cm,
+]
+\visible<1->{
+\node[rectNode, label = {[name = cvTestLabel]cvTest}] (cvtest) {$j$};
+\node[rectNode, right = of cvtest, label = cvTrain] (cvtrain) {$1,\ldots j-1, j+1, \ldots, 10$};
+}
+\visible<2->{
+\node[rectNode, below = of cvtrain](models) {MVR models (PCR, PLS, CPPLS)};
+}
+\visible<3->{
+\node[rectNode, right = of models, label = Scores](scores) {1, 2, \ldots, 128};
+}
+\visible<4->{
+\node[rectNode, below = of models.195, text width = 5cm, rectangle split, rectangle split parts=2, label = {[text width = 5cm, align = center, name = ldaDataLabel]below:{\small Loop over each additional scores}}](ldaData) {
+$y =$ categories, \\$X = $ Scores from $1$ to $i$
+	\nodepart{second}
+	LDA Model: $y = f(X)$
+	};
+}
+\visible<5->{
+\node[text width = 3.5cm, align = center, rectNode, below = of scores, label = {[text width = 1cm, align = center, name = errorLabel]below:{\scriptsize For $i^{th}$ Scores \\ \scriptsize and $j^{th}$ cv split}}](error){Error\\(cvTest and Train)};
+
+\node[fit=(cvTestLabel)(errorLabel)(error)(ldaData)(ldaDataLabel)(scores), draw, label = below:{Cross-validation Loop}] {};
+}
+%% Arrows
+
+\visible<4->{\draw[myArrow] (cvtest.south) -- (cvtest |- ldaData.north);}
+\visible<2->{\draw[myArrow] (cvtrain) -- (models);}
+\visible<3->{\draw[myArrow] (models) -- (scores);}
+\visible<4->{\draw[myArrow] (scores.south) -- ++(0pt, -3mm)  -| (ldaData.north);}
+\visible<5->{\draw[myArrow] (ldaData.east) |- (error);}
+\end{tikzpicture}
 \end{frame}
 
 \section{Classification with series stack}
 % Dealing with First set
-<<firstSet, child="Child1.Rnw", eval = T>>=
+<<firstSet, child="Child1.Rnw">>=
 @
-\section{Classification with series averaged over Series-Event Combination}
-<<secondSet, child="Child2.Rnw", eval = T>>=
+\section{Classification with series averaged over Series repetition}
+<<secondSet, child="Child2.Rnw">>=
 @
 \section{Classification with series averaged over Person-Event Combination}
-<<thirdSet, child="Child3.Rnw", eval = T>>=
+<<thirdSet, child="Child3.Rnw">>=
 @
 
 %-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -168,9 +287,8 @@ ggplot(mscError, aes(Model, value, color = variable)) +
 %-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 %	FRAME: References
 %-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-
 \begin{frame}[c]{References}
-\nocite{martens2001multivariate}
+\nocite{indahl2009canonical,R-data.table,wickham2006ggplot,R-knitr,martens2001multivariate,martens1992multivariate,wickham2012reshape2,R-signal}
 \printbibliography
 \end{frame}
 

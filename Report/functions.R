@@ -183,7 +183,7 @@ plda <- function(x, cat.resp, fn = 'cppls', split = 10, fitComp = min(dim(x)), p
       if (ldafn != 'lda') {
         lda.fit <- klaR::rda(y ~ x, data = ldaData.train, gamma = 0, lambda = 1)
       } else {
-        lda.fit <- lda(y ~ x, data = ldaData.train)
+        lda.fit <- MASS::lda(y ~ x, data = ldaData.train)
       }
    
       ## LDA Prediction
@@ -228,7 +228,7 @@ classify.plda <- function(x, ncomp){
   if (x$lda.fun != 'lda') {
     lda.fit <- klaR::rda(y ~ x, data = ldaData, gamma = 0, lambda = 1)
   } else {
-    lda.fit <- lda(y ~ x, data = ldaData)
+    lda.fit <- MASS::lda(y ~ x, data = ldaData)
   }
   
   

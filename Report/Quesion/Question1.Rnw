@@ -1,0 +1,85 @@
+\documentclass[11pt]{article}
+\usepackage{amsmath}
+\usepackage{mathpazo}
+\usepackage{setspace}
+\usepackage[margin = 1in]{geometry}
+\usepackage{caption, float}
+
+\linespread{1.25}
+\setlength\parindent{0pt}
+\setlength{\parskip}{6pt}
+
+\begin{document}
+Dear Harald,
+
+I am in a small problem related to Replication and Repeated Measurement and could not able to identify one over another. 
+<<echo = FALSE, warning=FALSE, message=FALSE>>=
+## Initial Stuffs ----
+## Clear Everything
+rm(list = ls())
+
+## Setting up working directory
+wd <- "/Users/rajurim/Dropbox (NMBU)/ProjectHRV/Report"
+if (getwd() != wd)
+  setwd(wd)
+
+## Reading Packages
+req.pkgs <- c('readxl', 'pls', 'signal', 'gridExtra', 'grid', 'MASS')
+invisible(ldply(req.pkgs, require, character.only = T))
+## ------
+source('functions.R')
+source('makeDataReady.R')
+
+act <- c('Walking', 'Sauna')
+prsn <- paste('Person', c(1:3))
+
+spcgrm <- spcgrm[Activity %in% act & Person %in% prsn]
+
+spcMat <- spcgrm[, .(spMat = llply(sg, function(x){
+  spMat <- t(log10(abs(x$S)))
+  rownames(spMat) <- x$t
+  colnames(spMat) <- x$f
+  list(spMat)
+})), by = .(Activity, ID, Person)]
+
+spcmelt <- rbindlist(llply(1:nrow(spcMat), function(x){
+  spMat <- melt(spcMat[x, spMat][[1]][[1]])
+  data.table(
+    Activity = spcMat[x, Activity],
+    ID = spcMat[x, ID],
+    Person = spcMat[x, Person],
+    spMat
+  )
+}))
+
+plt <- ggplot(data.frame(spcmelt), aes(Var2, Var1)) +
+  geom_tile(aes(fill = value)) +
+  facet_grid(Person + ID + Activity ~ ., space = 'free_y', scale = 'free') +
+  labs(x = 'Frequency Window (dB)', y = 'Time (s)') +
+  theme_bw() +
+  scale_fill_gradient(low = "red2", high = "black") +
+  theme(legend.position = 'none')
+@
+I have some series for different person for different activity. For some fixed series, I used the \texttt{specgram} function of \texttt{signal} package of R which gives me a frequency windows of 128 observation. In another words, It splited the series into 128 equal number of observation blocks with overlap of 16 observations. It applies FFT tranformation on each block and gives an output of a matrix. On transposing the matrix, the rows refer to the time scale and the columns refer to the frequency for differnt splits. One example of the matrix is in figure-\ref{fig:specGram}. 
+
+<<specGram, echo = FALSE, out.width='0.8\\textwidth', fig.cap=c("Spectrogram for one example event, each row correspond to a time-point in rr-series while each column correspond to log10(abs(fft)) value of rr-seres at that time-point. The rr-series is divided into 128 equal number of windows with 16 observations overlapping."), fig.pos='H', fig.align='center'>>=
+ggplot(spcmelt[ID == 'P222'], aes(Var2, Var1, fill = value)) + geom_tile() + 
+  labs(x = 'Frequency (dB)', y = 'Time(s)') + theme_bw() + 
+  theme(legend.position = 'none')+
+  scale_fill_gradient(low = "red2", high = "black")
+@
+
+For the classification of different activity, I have stacked these frequencies for various Activity for different persons and series, so that each stack refer to some specific combination and the row corresponds to a time scale of some segment of the series and the column corresponds to the frequency of that segment. I have presented the stacking of some of the combination in figure-\ref{fig:SpecGramStack}.
+
+<<SpecGramStack, echo=FALSE, out.width='\\textwidth', out.height = '0.83\\textheight', fig.cap=c("Stacking of specgram row over row (rbind) with the same frequency window size(128)"), fig.pos='H'>>=
+print(plt)
+@
+
+If I use this whole matrix for analysis of classification of differnt events, will it be the case of repeated measurement and suffer a problem. I have also tried to take the column mean, i.e. mean over differnt time-points for each frequency column. In that case, I will end up with one row for each of the combination for a person and activity. In that case, I will have very few observation and very poor classification due to the attempts to generalise a lot from the frequencies. Hope to get some suggestion at this last period,
+
+\vspace{2cm}
+\noindent Best Regards, \\
+Raju Rimal
+
+
+\end{document}
